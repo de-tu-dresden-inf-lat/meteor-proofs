@@ -1,5 +1,6 @@
 from meteor_reasoner.materialization.join_util import *
 from meteor_reasoner.materialization.apply import *
+from meteor_reasoner.materialization.ifCD import isCD
 
 
 def ground_generator(literal, context, D, D_index=None, delta_old=None, visited=False, flag=False):
@@ -16,7 +17,7 @@ def ground_generator(literal, context, D, D_index=None, delta_old=None, visited=
     """
     predicate = literal.get_predicate()
     entity = copy.deepcopy(literal.get_entity())
-
+    
     if visited:
         if predicate not in delta_old:
             return
@@ -57,8 +58,30 @@ def ground_generator(literal, context, D, D_index=None, delta_old=None, visited=
                     yield tmp_entity, tmp_context
 
     elif not flag:
-        if predicate not in D:
-            return
+        if predicate not in D and isCD(predicate):
+             if isCD(predicate):  #concrete domain
+                 if not contain_variable(entity):
+                     yield entity, dict()
+                 elif not contain_variable_after_replace(entity, context):
+                     replaced_entity = []
+                     for term in entity:
+                         if term.type == "variable":
+                             term.type = "constant"
+                             term.name = context[term.name]
+                             replaced_entity.append(term)
+                         else:
+                             replaced_entity.append(term)
+                     replaced_entity = tuple(replaced_entity)
+                     yield tuple(replaced_entity), dict()
+                 else:
+                     print("Error: a CD constraint was not grounded properly")
+                     #print(predicate)
+                     #for term in entity:
+                     #   print(term.name)
+                     #print(context)
+                     return
+             else:
+                 return
 
         if len(entity) == 1 and entity[0].name == "nan":
             yield entity, dict()
@@ -77,7 +100,7 @@ def ground_generator(literal, context, D, D_index=None, delta_old=None, visited=
                 else:
                     replaced_entity.append(term)
             replaced_entity = tuple(replaced_entity)
-            if predicate in D and tuple(replaced_entity) in D[predicate]:
+            if (predicate in D and tuple(replaced_entity) in D[predicate]) or isCD(predicate):
                 yield tuple(replaced_entity), dict()
         else:
             if D_index is not None:
