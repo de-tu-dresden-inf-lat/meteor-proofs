@@ -1,0 +1,6 @@
+**/__pycache__
+meteor/tu_dresden/data/*
+meteor/tu_dresden/json_1/*
+meteor/tu_dresden/output
+meteor/tu_dresden/proof_extractor.jar
+
