@@ -184,10 +184,10 @@ If tracing is enabled/disabled, the script will write into **trace_time.txt**/**
 nr of facts | load time | reasoning time | parse time | total time | Size of D after entailment checking | Size of the Parser 
 ```
 
-If tracing is enabled and entailment is *true*, the script will also create a new json file under **json_1/10000.json**, which will be used by the JAR file to output the proof in .svg format. Assuming you have build the JAR from the **evee** folder and put it into the same directory, to output the proof, run:
+If tracing is enabled and entailment is *true*, the script will also create a new json file under **json_1/10000.json**, which will be used by the JAR file to output the proof in .svg format. Assuming you have built the JAR from the **evee** folder and put it into the same directory, to output the proof, run:
 
 ```shell
-java -jar ../proof_extractor.jar json_1/10000.json output/graph_10000.svg output/proof_10000.svg 
+java -jar proof_extractor.jar json_1/10000.json output/graph_10000.svg output/proof_10000.svg 
 
 ```
 
