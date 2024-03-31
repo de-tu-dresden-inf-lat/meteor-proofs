@@ -5,6 +5,7 @@ from collections import defaultdict
 from meteor_reasoner.materialization.index_build import build_index
 from meteor_reasoner.utils.operate_dataset import print_dataset
 from meteor_reasoner.materialization.coalesce import coalescing_d
+from meteor_reasoner.materialization.ifCD import ifCD,isCD
 
 
 def naive_join(rule, D, delta_new, D_index=None, must_literals=None, graph=None):
@@ -42,14 +43,20 @@ def naive_join(rule, D, delta_new, D_index=None, must_literals=None, graph=None)
                 else:
                     if grounded_literal.get_predicate() not in ["Bottom", "Top"]:
                         grounded_literal.set_entity(delta[i][0])
-
+                
+                if not isCD(grounded_literal.get_predicate()):
                 # Operators are popped here
-                if graph is not None:
-                    t = apply(grounded_literal, D, outermost_literals=outermost_literals, nested_literals=nested_literals)
-                else:
-                    t = apply(grounded_literal, D)
+                    if graph is not None:
+                        t = apply(grounded_literal, D, outermost_literals=outermost_literals, nested_literals=nested_literals)
+                    else:
+                        t = apply(grounded_literal, D)
                 # dnh: grounded literals satisfy the body of the rule at times t
                 # i.e: head rule can be deduced at times t
+                else:
+                     if ifCD(grounded_literal.get_predicate(),delta[i][0]):
+                         t = [Interval(float('-inf'), float('inf'), True, True)]
+                     else:
+                         t = []
                 if len(t) == 0:
                     break
                 else:
@@ -94,7 +101,8 @@ def naive_join(rule, D, delta_new, D_index=None, must_literals=None, graph=None)
                 else:
                     replaced_head_entity = head_entity
             except:
-                print("hello")
+                 print("Head variables in Rule({}) do not appear in the body")
+                 print(rule)
 
             # If all literals appear in some time interval (T)
             if len(T) == len(literals):
