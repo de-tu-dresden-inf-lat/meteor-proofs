@@ -191,4 +191,4 @@ java -jar ../proof_extractor.jar json_1/10000.json output/graph_10000.svg output
 
 ```
 
-The above command will write the complete graph generated from the json file into **output/graph_10000.svg** and the proof only in **output/proof_10000.svg**
+The above command will write the complete graph generated from the json file into **output/graph_10000.svg** and the proof only in **output/proof_10000.svg**. Furthermore, it will also output the time taken for finding the proof in a separate file **executionTime.txt** 
