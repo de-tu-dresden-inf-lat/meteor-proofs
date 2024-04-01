@@ -1,4 +1,4 @@
-## Finding Proofs for Critical Situations Over Sensor Data Streams(Code)
+## Finding Proofs for Critical Situations Over Sensor Data Streams (Code)
 
 
 ### 1. Introduction:
@@ -43,7 +43,7 @@ This repo contains the Java and Python code used for evaluation in "Finding Proo
 #### Outlines:
 * The **evee** folder contains build information and the Java code for constructing proofs
 * **meteor/** contains MeTeoR reasoner's modules:
-  * **meteor/meteor_reasoner**: modified code of the original reasoner to enable tracing
+  * **meteor/meteor_reasoner**: modified code of the original [MeTeoR reasoner](https://github.com/wdimmy/MeTeoR) to enable tracing
   * **meteor/tu_dresden**: Code used in the experiments of the paper
 
 ### 2. Experiments:
