@@ -170,8 +170,8 @@ python generate_facts.py --facts 10000 --iteration 6
 The script will write in **data/10000.txt** the facts entailed from the last materialisation round
 
 #### Run the experiment
-For simplicity, the script uses the first fact in the **generated.txt** for evaluation
-Assuming your data file is under **output/" and the facts for entailment checking in **data/**, to run experiment with tracing enabled, use:
+For simplicity, the script uses the first fact in the **data/10000.txt** for evaluation
+Assuming your data file is under **output/** and the facts for entailment checking in **data/**, to run experiment with tracing enabled, use:
 
 ```shell
 python pipeline.py --facts 10000 --glassbox 1
