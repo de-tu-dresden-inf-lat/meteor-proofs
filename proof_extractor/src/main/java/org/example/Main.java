@@ -14,7 +14,6 @@ import guru.nidi.graphviz.attribute.Color;
 import guru.nidi.graphviz.attribute.Label;
 import guru.nidi.graphviz.attribute.Shape;
 import guru.nidi.graphviz.attribute.Style;
-import guru.nidi.graphviz.engine.Engine;
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
 import guru.nidi.graphviz.engine.Renderer;
@@ -32,15 +31,16 @@ import java.util.*;
 // then press Enter. You can now see whitespace characters in your code.
 public class Main {
 
-    private static String IN, GRAPH, PROOF, GOAL;
+    private static String GRAPH;
+    private static String PROOF;
 
     private static Color RULE_COLOR = Color.rgb(142,203,240);
 
-    public static void ProofExtractor(SimpleGraph graph) throws ProofGenerationFailedException, FormattingException, IOException {
+    public static void extractProof(SimpleGraph graph, String jsonFile, String svgFile) throws ProofGenerationFailedException, FormattingException, IOException {
         JSONArray edges = graph.getEdges();
-        GOAL = graph.getConclusion();
+        String goal = graph.getConclusion();
         //edges.remove(edges.size()-1);
-        IProof<String> proof = new Proof<>(GOAL);
+        IProof<String> proof = new Proof<>(goal);
 
         for (Object edge : edges) {
             JSONArray e = (JSONArray) edge;
@@ -52,11 +52,12 @@ public class Main {
             Inference<String> inference = new Inference<>((String) e.get(2), (String) e.get(1), premises);
             proof.addInference(inference);
         }
-        //draw(proof, GRAPH);
+//        draw(proof, GRAPH);
         IProof<String> minTree = new MinimalProofExtractor<>(new TreeSizeMeasure<String>()).extract(proof);
         JsonProofWriter<String> writer = JsonProofWriter.getInstance();
-        System.out.println("TREE:\n" + writer.toString(minTree));
-        draw(minTree, PROOF);
+        writer.writeToFile(minTree, jsonFile.replaceAll(".json", ""));
+//        System.out.println("TREE:\n" + writer.toString(minTree));
+        draw(minTree, svgFile);
     }
 
     public static <T> void draw(IProof<T> proof, String outFile) throws IOException {
@@ -151,15 +152,13 @@ public class Main {
         // Press Alt+Enter with your caret at the highlighted text to see how
         // IntelliJ IDEA suggests fixing it
         // run the program with path from args
-        IN = args[0];
-        GRAPH = args[1];
-        PROOF = args[2];
+        String inputFile = args[0];
         long startTime = System.nanoTime();
-        ProofExtractor(new SimpleGraph(IN));
+        extractProof(new SimpleGraph(inputFile), args[1], args[2]);
         long endTime = System.nanoTime();
         long timeElapsed = endTime - startTime;
         String time = String.format("%.2f", (double) timeElapsed / 1000000000);
-        String toWrite = "File: " + IN + ", Time: " + time + "\n";
+        String toWrite = "File: " + inputFile + ", Time: " + time + "\n";
         try {
             FileWriter fw = new FileWriter("proof_time.txt", true);
             fw.write(toWrite);

@@ -8,12 +8,11 @@ This repo contains the Java and Python code used for evaluation in "Finding Proo
 ``` bash
 .
 ├── LICENSE
-├── evee
+├── proof_extractor
 │   ├── pom.xml
 │   ├── proof_output
 │   └── src
-│       ├── main
-│       └── test
+│       └── main
 └── meteor
     ├── meteor_reasoner
     │   ├── __init__.py
@@ -41,7 +40,7 @@ This repo contains the Java and Python code used for evaluation in "Finding Proo
 ```
 
 #### Outlines:
-* The **evee** folder contains build information and the Java code for constructing proofs
+* The **proof_extractor** folder contains build information and the Java code for constructing proofs
 * **meteor/** contains MeTeoR reasoner's modules:
   * **meteor/meteor_reasoner**: modified code of the original [MeTeoR reasoner](https://github.com/wdimmy/MeTeoR) to enable tracing
   * **meteor/tu_dresden**: Code used in the experiments of the paper
@@ -184,11 +183,11 @@ If tracing is enabled/disabled, the script will write into **trace_time.txt**/**
 nr of facts | load time | reasoning time | parse time | total time | Size of D after entailment checking | Size of the Parser 
 ```
 
-If tracing is enabled and entailment is *true*, the script will also create a new json file under **json_1/10000.json**, which will be used by the JAR file to output the proof in .svg format. Assuming you have built the JAR from the **evee** folder and put it into the same directory, to output the proof, run:
+If tracing is enabled and entailment is *true*, the script will also create a new json file under **json_1/10000.json**, which will be used by the JAR file to output the proof in .svg format. Assuming you have built the JAR from the **proof_extractor** folder (using `mvn clean package`, needs [Evee](https://github.com/de-tu-dresden-inf-lat/evee) as a dependency) and put it into the same directory, to output the proof, run:
 
 ```shell
-java -jar proof_extractor.jar json_1/10000.json output/graph_10000.svg output/proof_10000.svg 
+java -jar proof_extractor-1.0-SNAPSHOT-jar-with-dependencies.jar json_1/10000.json output/proof_10000.json output/proof_10000.svg 
 
 ```
 
-The above command will write the complete graph generated from the json file into **output/graph_10000.svg** and the proof only in **output/proof_10000.svg**. Furthermore, it will also output the time taken for finding the proof in a separate file **executionTime.txt** 
+The above command will write the proof extracted from the input json file into **output/proof_10000.json** and an image of the proof into **output/proof_10000.svg**. Furthermore, it will also output the time taken for finding the proof in a separate file **proof_time.txt**.
