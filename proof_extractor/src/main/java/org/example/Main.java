@@ -1,7 +1,5 @@
 package org.example;
 
-import de.tu_dresden.inf.lat.evee.general.data.exceptions.FormattingException;
-import de.tu_dresden.inf.lat.evee.general.data.exceptions.ParsingException;
 import de.tu_dresden.inf.lat.evee.proofs.data.Inference;
 import de.tu_dresden.inf.lat.evee.proofs.data.Proof;
 import de.tu_dresden.inf.lat.evee.proofs.data.exceptions.ProofGenerationFailedException;
@@ -27,16 +25,11 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 
-// Press Shift twice to open the Search Everywhere dialog and type `show whitespaces`,
-// then press Enter. You can now see whitespace characters in your code.
 public class Main {
 
-    private static String GRAPH;
-    private static String PROOF;
+    private static final Color RULE_COLOR = Color.rgb(142,203,240);
 
-    private static Color RULE_COLOR = Color.rgb(142,203,240);
-
-    public static void extractProof(SimpleGraph graph, String jsonFile, String svgFile) throws ProofGenerationFailedException, FormattingException, IOException {
+    public static void extractProof(SimpleGraph graph, String jsonFile, String svgFile) throws ProofGenerationFailedException, IOException {
         JSONArray edges = graph.getEdges();
         String goal = graph.getConclusion();
         //edges.remove(edges.size()-1);
@@ -61,16 +54,12 @@ public class Main {
     }
 
     public static <T> void draw(IProof<T> proof, String outFile) throws IOException {
-        GraphMLMapper<T> map = new GraphMLMapper<T>();
+        GraphMLMapper<T> map = new GraphMLMapper<>();
         Set<IInference<T>> explored = new HashSet<>();
         Map<Integer, MutableNode> id2Node = new HashMap<>();
         Map<Integer,Set<Integer>> node2Nodes = new HashMap<>();
 
         MutableGraph graph = guru.nidi.graphviz.model.Factory.mutGraph("proof").setDirected(true);
-
-//        MutableNode sink = guru.nidi.graphviz.model.Factory.mutNode(proof.getFinalConclusion().toString())
-//                .add(Label.of(proof.getFinalConclusion().toString()), Shape.RECTANGLE,
-//                        Style.ROUNDED);
 
         proof.getInferences().forEach(x->
                 populateGraph(graph, x, map, explored, id2Node, node2Nodes)
@@ -148,9 +137,7 @@ public class Main {
         return label;
     }
 
-    public static void main(String[] args) throws FormattingException, ProofGenerationFailedException, ParsingException, IOException, ParseException {
-        // Press Alt+Enter with your caret at the highlighted text to see how
-        // IntelliJ IDEA suggests fixing it
+    public static void main(String[] args) throws ProofGenerationFailedException, IOException, ParseException {
         // run the program with path from args
         String inputFile = args[0];
         long startTime = System.nanoTime();
