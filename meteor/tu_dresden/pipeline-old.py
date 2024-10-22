@@ -23,36 +23,22 @@ parser.add_argument("--facts", default="10000", type=str, help="Input the datase
 parser.add_argument("--rulepath", default="programs/p.txt", type=str, help="Input the program path")
 parser.add_argument("--glassbox", default="1", type=str, help="Do Glassbox tracing")
 parser.add_argument("--profile", default="0", type=str, help="Do profiling")
-parser.add_argument("--drone", default="false", type=str, help="If testing for the drone ontology")
-parser.add_argument("--query", default="false", type=str, help="If there is a query file")
 
 args = parser.parse_args()
 
-current_path = os.path.dirname(os.path.realpath(__file__))
+nr_facts = args.facts
 do_profile = args.profile
 
-if args.drone == "false":
-    nr_facts = args.facts
-    rulepath = args.rulepath
-    data_path_relative = f"output/{nr_facts}.txt"
-else:
-    nr_facts = args.drone  #can be a string
-    rulepath = "../../../drone-ontologies/advanced/program.txt"
-    data_path_relative = f"drones/NLGexamples/{nr_facts}/dataset.txt"
-
+data_path_relative = f"output/{nr_facts}.txt"
+current_path = os.path.dirname(os.path.realpath(__file__))
 data_path = os.path.join(current_path, data_path_relative)
 
-with open(rulepath) as file:
+with open(args.rulepath) as file:
     rules = file.readlines()
     program = load_program(rules)
 
 try:
-    if args.query != "false":
-        fact_path = f"data/{args.query}.txt"
-    elif args.drone == "false":
-        fact_path = f"data/T4_{nr_facts}.txt"
-    else:
-        fact_path = f"drones/NLGexamples/{nr_facts}/entailment.txt"
+    fact_path = f"data/T4_{nr_facts}.txt"
     with open(fact_path, "r") as file:
         fact = file.readlines()[0].strip()
 
@@ -92,7 +78,6 @@ def run():
                 return True
             else:
                 if flag:
-                    print("The entailment does not hold")
                     return False
 
 
@@ -120,7 +105,6 @@ else:
 REASONING_END = time.perf_counter()
 REASONING_TIME = REASONING_END - REASONING_START
 
-
 """
     PARSING
 """
@@ -128,12 +112,7 @@ PARSING_START = time.perf_counter()
 if glassbox == "1" and entailment and do_profile == "0":
     parser = HyperGraphParser(graph)
     parser.initialization()
-    if args.query != "false":
-        file_path = f"json_1/{nr_facts}{args.query}.json"
-    elif args.drone == "false":
-        file_path = f"json_1/{nr_facts}.json"
-    else:
-        file_path = f"drones/ds/{nr_facts}.json"
+    file_path = f"json_1/{nr_facts}.json"
     parser.write_to_file_as_json(file_path)
 PARSING_END = time.perf_counter()
 PARSING_TIME = PARSING_END - PARSING_START
@@ -142,7 +121,7 @@ TOTAL_TIME = PARSING_TIME + REASONING_TIME + LOADING_TIME
 print("========= RESULT =========")
 print("Total time: ", TOTAL_TIME)
 
-if glassbox == "1" and entailment:
+if glassbox == "1":
     with open("trace_time.txt", "a") as f:
         f.write(f"{nr_facts} : {LOADING_TIME} : {REASONING_TIME} : {PARSING_TIME} : {TOTAL_TIME} : {len(graph)} : {len([*yield_dataset(D)])} : {len(parser.edges)}\n")
 else:

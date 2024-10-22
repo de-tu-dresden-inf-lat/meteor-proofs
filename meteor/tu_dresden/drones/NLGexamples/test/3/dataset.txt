@@ -1,0 +1,7 @@
+drone(d)@0
+haspart(d,bat)@0
+plannedbatterylevel(bat,80)@[6,15]
+batterylevel(bat,52)@[7,9]
+batterylevel(bat,51)@(9,11]
+batterylevel(bat,50)@(11,12]
+batterylevel(bat,49)@(12,13]

@@ -5,6 +5,7 @@ from meteor_reasoner.classes.term import *
 from meteor_reasoner.classes.literal import *
 from meteor_reasoner.classes.interval import *
 from meteor_reasoner.classes.rule import *
+from meteor_reasoner.materialization.ifCD import isCD
 from decimal import Decimal
 ATOM_PATTERN = "(.*)\((.*)\)"
 FACT_WITH_ENTITY_PATTERN = "(.*)\((.*)\)@(.*)"
@@ -60,13 +61,19 @@ def parse_rule(line):
             negative_body.append(literal)
 
     ordered_literals = []
+    CD_literals = []
     for literal in literals:
+        if isCD(literal.get_predicate()):
+            CD_literals.append(literal)
+            literals.remove(literal)
         if isinstance(literal, BinaryLiteral):
             ordered_literals.append(literal)
             literals.remove(literal)
     literals = sorted(literals, key=lambda item: len(item.get_entity()), reverse=True)
-    ordered_literals = ordered_literals + literals
+    ordered_literals = ordered_literals + literals + CD_literals
     rule = Rule(head_atom, ordered_literals, negative_body=negative_body)
+    #print("parsed")
+    #print(rule)
     return rule
 
 

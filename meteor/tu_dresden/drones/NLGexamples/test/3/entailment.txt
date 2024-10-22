@@ -1,0 +1,2 @@
+batterylowerthanplanned(bat)@12
+significantbatterydrop(bat)@13

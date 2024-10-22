@@ -1,0 +1,9 @@
+riskofphysicaldamage(d)@[10,10]
+speedsomefast(d)@[0,20]
+flying(d)@15
+speedmore5ms(d)@5
+connectivitylessthan50percent(d)@0
+extremeweather(env)@10
+lowvisibility(env)@15
+badenvironment(env)@10
+badenvironment(env)@15

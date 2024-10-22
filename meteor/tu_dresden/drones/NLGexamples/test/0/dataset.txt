@@ -1,0 +1,3 @@
+notwaterproofdrone(d)@[0,+inf)
+watercontact(d)@5
+sensordamage(d,sens1)@10

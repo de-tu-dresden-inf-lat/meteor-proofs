@@ -1,0 +1,12 @@
+speed(d,100)@[0,20]
+drone(d)@[0,+inf)
+notwaterproofdrone(d)@[0,+inf)
+watercontact(d)@4
+pilotedby(d,Max)@[0,+inf)
+inexperienced(Max)@[0,20]
+hurricane(env)@10 
+environment(d,env)@[0,+inf)
+altitude(d,100)@[0,30]
+dark(env)@15
+windspeed(env,25)@5
+connectivity(d,5)@0

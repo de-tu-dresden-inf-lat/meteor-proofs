@@ -43,9 +43,22 @@ This repo contains the Java and Python code used for evaluation in "Finding Proo
 * The **proof_extractor** folder contains build information and the Java code for constructing proofs
 * **meteor/** contains MeTeoR reasoner's modules:
   * **meteor/meteor_reasoner**: modified code of the original [MeTeoR reasoner](https://github.com/wdimmy/MeTeoR) to enable tracing
-  * **meteor/tu_dresden**: Code used in the experiments of the paper
+  
+  pip install "numpy==1.16.0" "pandas==0.24.0" "urllib3==1.24.0" "scikit-learn==0.20.0" "networkx==2.6.3" "rdflib==4.2.2" "outdated==0.2.0"
 
-### 2. Experiments:
+  pip install - U meteor_reasoner
+
+  * **meteor/tu_dresden**: Code used in the experiments of the paper
+  
+### 2. Test on the Drone ontology:
+    Make sure that the "drone-ontologies" repo (https://gitlab.perspicuous-computing.science/project-e2/drone-ontologies.git)
+    is in the same superdirectory as "meteor-proofs"
+
+    From the meteor/tu_dresden directory run:
+    ./scripts/test.sh 
+
+
+### 3. Experiments:
 
 We follow similar steps for generating temporal data as proposed in the original project of MeTeoR:
 

@@ -1,0 +1,9 @@
+drone(d)@0
+speed(d,20)@[0,10] 
+building(t1)@0
+tree(t2)@0
+statue(t3)@0
+position(t1,x10y13)@0
+position(t2,x10y12)@0
+distance(d,x10y13,2)@4
+distance(d,x10y12,3)@5

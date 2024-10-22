@@ -75,10 +75,10 @@ def ground_generator(literal, context, D, D_index=None, delta_old=None, visited=
                      yield tuple(replaced_entity), dict()
                  else:
                      print("Error: a CD constraint was not grounded properly")
-                     #print(predicate)
-                     #for term in entity:
-                     #   print(term.name)
-                     #print(context)
+                     print(predicate)
+                     for term in entity:
+                        print(term.name)
+                     print(context)
                      return
              else:
                  return
