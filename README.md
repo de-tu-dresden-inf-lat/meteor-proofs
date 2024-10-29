@@ -46,7 +46,7 @@ This repo contains the Java and Python code used for evaluation in "Finding Proo
   
   pip install "numpy==1.16.0" "pandas==0.24.0" "urllib3==1.24.0" "scikit-learn==0.20.0" "networkx==2.6.3" "rdflib==4.2.2" "outdated==0.2.0"
 
-  pip install - U meteor_reasoner
+  pip install -U meteor_reasoner
 
   * **meteor/tu_dresden**: Code used in the experiments of the paper
   

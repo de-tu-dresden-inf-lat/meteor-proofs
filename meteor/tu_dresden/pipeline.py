@@ -133,7 +133,14 @@ if glassbox == "1" and entailment and do_profile == "0":
     elif args.drone == "false":
         file_path = f"json_1/{nr_facts}.json"
     else:
-        file_path = f"drones/ds/{nr_facts}.json"
+        drone_ds = "drones/ds"
+        if not os.path.isdir(drone_ds):
+            os.mkdir(drone_ds)
+        nr_facts_folder = nr_facts.split('/')
+        drone_ds_folder = f"{drone_ds}/{nr_facts_folder[0]}"
+        if not os.path.isdir(drone_ds_folder):
+            os.mkdir(drone_ds_folder)
+        file_path = f"{drone_ds}/{nr_facts}.json"
     parser.write_to_file_as_json(file_path)
 PARSING_END = time.perf_counter()
 PARSING_TIME = PARSING_END - PARSING_START
