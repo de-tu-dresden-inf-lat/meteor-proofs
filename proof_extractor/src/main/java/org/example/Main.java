@@ -47,6 +47,7 @@ public class Main {
         }
 //        draw(proof, GRAPH);
         IProof<String> minTree = new MinimalProofExtractor<>(new TreeSizeMeasure<String>()).extract(proof);
+        minTree = minTree.withoutDuplicateInferences();
         JsonProofWriter<String> writer = JsonProofWriter.getInstance();
         writer.writeToFile(minTree, jsonFile.replaceAll(".json", ""));
 //        System.out.println("TREE:\n" + writer.toString(minTree));
