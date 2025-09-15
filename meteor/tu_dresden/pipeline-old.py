@@ -1,7 +1,7 @@
 import sys
 sys.path.append('../')
 
-from meteor_reasoner.utils.hypergraph_parser import HyperGraphParser
+from meteor.meteor_reasoner.utils.hypergraph import HyperGraphParser
 from meteor_reasoner.materialization.index_build import *
 from meteor_reasoner.materialization.coalesce import *
 from meteor_reasoner.utils.loader import load_dataset, load_program

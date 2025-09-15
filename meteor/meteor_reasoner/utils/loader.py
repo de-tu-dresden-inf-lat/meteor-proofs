@@ -89,12 +89,7 @@ def load_dataset(file_or_path, graph=None):
         try:
           predicate, entity, interval = parse_str_fact(line)
           if graph is not None:
-              atom = Atom(predicate, entity=entity, interval=interval)
-              graph.append({
-                  "rule": "Asserted",
-                  "succ": atom.__str__(),
-                  "pred": [],
-              })
+              graph.extend((Atom(predicate, entity), interval), "Asserted")
 
         except:
             continue
@@ -142,6 +137,8 @@ def load_program(file_or_path):
                 line = line.replace("<+>", "Diamondplus")
                 line = line.replace("<->", "Diamondminus")
                 line = line.replace("[+]", "Boxplus")
+                line = line.replace("[c]", "Boxc")
+                line = line.replace("<c>", "Diamondc")
                 line = line.replace(" ", "")
                 line = line.replace(".", "")
                 rules.append(line)

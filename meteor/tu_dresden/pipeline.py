@@ -1,7 +1,7 @@
 import sys
 sys.path.append('../')
 
-from meteor_reasoner.utils.hypergraph_parser import HyperGraphParser
+from meteor.meteor_reasoner.utils.hypergraph import HyperGraph
 from meteor_reasoner.materialization.index_build import *
 from meteor_reasoner.materialization.coalesce import *
 from meteor_reasoner.utils.loader import load_dataset, load_program
@@ -69,7 +69,7 @@ glassbox = args.glassbox
 """
 LOADING_START = time.perf_counter()
 if glassbox == "1":
-    graph = []
+    graph = HyperGraph()
     D = load_dataset(data_path, graph=graph)
 else:
     D = load_dataset(data_path)
@@ -105,10 +105,8 @@ if do_profile == "1":
     pr.enable()
     entailment = run()
     if glassbox == "1" and entailment:
-        parser = HyperGraphParser(graph)
-        parser.initialization()
         file_name = data_path_relative.split(".")[0]
-        parser.write_to_file_as_json("{}.json".format(file_name))
+        graph.write_to_file_as_json("{}.json".format(file_name))
     pr.disable()
     s = io.StringIO()
     ps = pstats.Stats(pr, stream=s).sort_stats('tottime')
@@ -126,8 +124,6 @@ REASONING_TIME = REASONING_END - REASONING_START
 """
 PARSING_START = time.perf_counter()
 if glassbox == "1" and entailment and do_profile == "0":
-    parser = HyperGraphParser(graph)
-    parser.initialization()
     if args.query != "false":
         file_path = f"json_1/{nr_facts}{args.query}.json"
     elif args.drone == "false":
@@ -141,7 +137,7 @@ if glassbox == "1" and entailment and do_profile == "0":
         if not os.path.isdir(drone_ds_folder):
             os.mkdir(drone_ds_folder)
         file_path = f"{drone_ds}/{nr_facts}.json"
-    parser.write_to_file_as_json(file_path)
+    graph.write_to_file_as_json(file_path)
 PARSING_END = time.perf_counter()
 PARSING_TIME = PARSING_END - PARSING_START
 

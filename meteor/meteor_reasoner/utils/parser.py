@@ -7,13 +7,13 @@ from meteor_reasoner.classes.interval import *
 from meteor_reasoner.classes.rule import *
 from meteor_reasoner.materialization.ifCD import isCD
 from decimal import Decimal
-ATOM_PATTERN = "(.*)\((.*)\)"
-FACT_WITH_ENTITY_PATTERN = "(.*)\((.*)\)@(.*)"
-FACT_WITHOUT_ENTITY_PATTERN = "(.*)@(.*)"
-INTERVAL_TWO_POINTS_PATTERN = "(^[\(,\[])(-?\d+\.?\d*|-inf),(-?\d+\.?\d*|\+?inf)([\),\]])$"
-INTERVAL_ONE_POINT_PATTERN =  "(^[\(,\[])(-?\d+\.?\d*|\+?inf)([\),\]])$"
-OPERATOR_TWO_POINTS_PATTERN = "(.*)([\(,\[])(-?\d+\.?\d*|-inf),(-?\d+\.?\d*|\+?inf)([\),\]])$"
-OPERATOR_ONE_POINT_PATTERN =  "(.*)([\(,\[])(-?\d+\.?\d*|-inf)([\),\]])$"
+ATOM_PATTERN = r"(.*)\((.*)\)"
+FACT_WITH_ENTITY_PATTERN = r"(.*)\((.*)\)@(.*)"
+FACT_WITHOUT_ENTITY_PATTERN = r"(.*)@(.*)"
+INTERVAL_TWO_POINTS_PATTERN = r"(^[\(,\[])(-?\d+\.?\d*|-inf),(-?\d+\.?\d*|\+?inf)([\),\]])$"
+INTERVAL_ONE_POINT_PATTERN =  r"(^[\(,\[])(-?\d+\.?\d*|\+?inf)([\),\]])$"
+OPERATOR_TWO_POINTS_PATTERN = r"(.*)([\(,\[])(-?\d+\.?\d*|-inf),(-?\d+\.?\d*|\+?inf)([\),\]])$"
+OPERATOR_ONE_POINT_PATTERN =  r"(.*)([\(,\[])(-?\d+\.?\d*|-inf)([\),\]])$"
 
 
 def random_return_name():
@@ -263,7 +263,9 @@ def parse_operator(operator_str):
         if b.group(4) == ")":
             right_open = True
 
-        if b.group(1) == "SOMETIME" and left_value >= 0:
+        if b.group(1) == "Boxc" or b.group(1) == "Diamondc":
+            return Operator(b.group(1), left_value)
+        elif b.group(1) == "SOMETIME" and left_value >= 0:
             return Operator("Diamondplus", Interval(left_value, right_value, left_open, right_open))
         elif b.group(1) == "SOMETIME" and left_value < 0:
             return Operator("Diamondminus", Interval(-right_value, -left_value, right_open, left_open))
@@ -315,53 +317,56 @@ def parse_literal(literal):
 
     """
 
-    pattern1 = "Boxminus[\[,\(]-?\d+\.?\d*[\),\]]"
-    pattern2 = "Boxplus[\[,\(]-?\d+\.?\d*[\),\]]"
-    pattern3 = "Diamondminus[\[,\(]-?\d+\.?\d*[\),\]]"
-    pattern4 = "Diamondplus[\[,\(]-?\d+\.?\d*[\),\]]"
-    pattern4_1 = "SOMETIME[\[,\(]-?\d+\.?\d*[\),\]]"
-    pattern4_2 = "ALWAYS[\[,\(]-?\d+\.?\d*[\),\]]"
+    pattern1 = r"Boxminus[\[,\(]-?\d+\.?\d*[\),\]]"
+    pattern2 = r"Boxplus[\[,\(]-?\d+\.?\d*[\),\]]"
+    pattern3 = r"Diamondminus[\[,\(]-?\d+\.?\d*[\),\]]"
+    pattern4 = r"Diamondplus[\[,\(]-?\d+\.?\d*[\),\]]"
+    pattern4_1 = r"SOMETIME[\[,\(]-?\d+\.?\d*[\),\]]"
+    pattern4_2 = r"ALWAYS[\[,\(]-?\d+\.?\d*[\),\]]"
 
 
 
-    pattern5 = "Boxminus[\[,\(]-?\d+\.?\d*,-?\d+\.?\d*[\),\]]"
-    pattern6 = "Boxplus[\[,\(]-?\d+\.?\d*,-?\d+\.?\d*[\),\]]"
-    pattern7 = "Diamondminus[\[,\(]-?\d+\.?\d*,-?\d+\.?\d*[\),\]]"
-    pattern8 = "Diamondplus[\[,\(]-?\d+\.?\d*,-?\d+\.?\d*[\),\]]"
-    pattern8_1 = "SOMETIME[\[,\(]-?\d+\.?\d*,-?\d+\.?\d*[\),\]]"
-    pattern8_2 = "ALWAYS[\[,\(]-?\d+\.?\d*,-?\d+\.?\d*[\),\]]"
+    pattern5 = r"Boxminus[\[,\(]-?\d+\.?\d*,-?\d+\.?\d*[\),\]]"
+    pattern6 = r"Boxplus[\[,\(]-?\d+\.?\d*,-?\d+\.?\d*[\),\]]"
+    pattern7 = r"Diamondminus[\[,\(]-?\d+\.?\d*,-?\d+\.?\d*[\),\]]"
+    pattern8 = r"Diamondplus[\[,\(]-?\d+\.?\d*,-?\d+\.?\d*[\),\]]"
+    pattern8_1 = r"SOMETIME[\[,\(]-?\d+\.?\d*,-?\d+\.?\d*[\),\]]"
+    pattern8_2 = r"ALWAYS[\[,\(]-?\d+\.?\d*,-?\d+\.?\d*[\),\]]"
 
-    pattern9 =  "Boxminus[\[,\(]-?\d+\.?\d*,\+?inf[\),\]]"
-    pattern10 = "Boxplus[\[,\(]-?\d+\.?\d*,\+?inf[\),\]]"
-    pattern11 = "Diamondminus[\[,\(]-?\d+\.?\d*,\+?inf[\),\]]"
-    pattern12 = "Diamondplus[\[,\(]-?\d+\.?\d*,\+?inf[\),\]]"
-    pattern12_1 = "SOMETIME[\[,\(]-?\d+\.?\d*,\+?inf[\),\]]"
-    pattern12_2 = "ALWAYS[\[,\(]-?\d+\.?\d*,\+?inf[\),\]]"
+    pattern9 =  r"Boxminus[\[,\(]-?\d+\.?\d*,\+?inf[\),\]]"
+    pattern10 = r"Boxplus[\[,\(]-?\d+\.?\d*,\+?inf[\),\]]"
+    pattern11 = r"Diamondminus[\[,\(]-?\d+\.?\d*,\+?inf[\),\]]"
+    pattern12 = r"Diamondplus[\[,\(]-?\d+\.?\d*,\+?inf[\),\]]"
+    pattern12_1 = r"SOMETIME[\[,\(]-?\d+\.?\d*,\+?inf[\),\]]"
+    pattern12_2 = r"ALWAYS[\[,\(]-?\d+\.?\d*,\+?inf[\),\]]"
 
 
-    pattern13 = "Boxminus[\[,\(]-inf,-?\d+\.?\d*[\),\]]"
-    pattern14 = "Boxplus[\[,\(]-inf,-?\d+\.?\d*[\),\]]"
-    pattern15 = "Diamondminus[\[,\(]-inf,-?\d+\.?\d*[\),\]]"
-    pattern16 = "Diamondplus[\[,\(]-inf,-?\d+\.?\d*[\),\]]"
-    pattern16_1 = "SOMETIME[\[,\(]-inf,-?\d+\.?\d*[\),\]]"
-    pattern16_2 = "ALWAYS[\[,\(]-inf,-?\d+\.?\d*[\),\]]"
+    pattern13 = r"Boxminus[\[,\(]-inf,-?\d+\.?\d*[\),\]]"
+    pattern14 = r"Boxplus[\[,\(]-inf,-?\d+\.?\d*[\),\]]"
+    pattern15 = r"Diamondminus[\[,\(]-inf,-?\d+\.?\d*[\),\]]"
+    pattern16 = r"Diamondplus[\[,\(]-inf,-?\d+\.?\d*[\),\]]"
+    pattern16_1 = r"SOMETIME[\[,\(]-inf,-?\d+\.?\d*[\),\]]"
+    pattern16_2 = r"ALWAYS[\[,\(]-inf,-?\d+\.?\d*[\),\]]"
 
-    since_pattern1 = "Since[\[,\(]-?\d+\.?\d*,-?\d+\.?\d*[\),\]]"
-    since_pattern3 = "Since[\[,\(]-?\d+\.?\d*[\),\]]"
-    until_pattern2 = "Until[\[,\(]-?\d+\.?\d*,-?\d+\.?\d*[\),\]]"
-    unitl_pattern4 = "Until[\[,\(]-?\d+\.?\d*[\),\]]"
-    UNTIL_pattern5 = "UNTIL[\[,\(]-?\d+\.?\d*,-?\d+\.?\d*[\),\]]"
-    UNTIL_pattern6 = "UNTIL[\[,\(]-?\d+\.?\d*[\),\]]"
+    boxc_pattern = r"Boxc\[\d+\.?\d*\]"
+    diamondc_pattern = r"Diamondc\[\d+\.?\d*\]"
 
-    since_pattern00 = "Since[\[,\(]-?\d+\.?\d*,\+?inf[\),\]]"
-    since_pattern01 = "Since[\[,\(]-inf,-?\d+\.?\d*[\),\]]"
-    UNTIL_pattern02 = "UNTIL[\[,\(]-?\d+\.?\d*,\+?inf[\),\]]"
-    UNTIL_pattern03 = "UNTIL[\[,\(]-inf,-?\d+\.?\d*[\),\]]"
+    since_pattern1 = r"Since[\[,\(]-?\d+\.?\d*,-?\d+\.?\d*[\),\]]"
+    since_pattern3 = r"Since[\[,\(]-?\d+\.?\d*[\),\]]"
+    until_pattern2 = r"Until[\[,\(]-?\d+\.?\d*,-?\d+\.?\d*[\),\]]"
+    unitl_pattern4 = r"Until[\[,\(]-?\d+\.?\d*[\),\]]"
+    UNTIL_pattern5 = r"UNTIL[\[,\(]-?\d+\.?\d*,-?\d+\.?\d*[\),\]]"
+    UNTIL_pattern6 = r"UNTIL[\[,\(]-?\d+\.?\d*[\),\]]"
 
-    until_pattern11 = "Until[\[,\(]-?\d+\.?\d*,\+?inf[\),\]]"
-    until_pattern12 = "Until[\[,\(]-inf,-?\d+\.?\d*[\),\]]"
-    UNTIL_pattern13 = "UNTIL[\[,\(]-?\d+\.?\d*,\+?inf[\),\]]"
-    UNTIL_pattern14 = "UNTIL[\[,\(]-inf,-?\d+\.?\d*[\),\]]"
+    since_pattern00 = r"Since[\[,\(]-?\d+\.?\d*,\+?inf[\),\]]"
+    since_pattern01 = r"Since[\[,\(]-inf,-?\d+\.?\d*[\),\]]"
+    UNTIL_pattern02 = r"UNTIL[\[,\(]-?\d+\.?\d*,\+?inf[\),\]]"
+    UNTIL_pattern03 = r"UNTIL[\[,\(]-inf,-?\d+\.?\d*[\),\]]"
+
+    until_pattern11 = r"Until[\[,\(]-?\d+\.?\d*,\+?inf[\),\]]"
+    until_pattern12 = r"Until[\[,\(]-inf,-?\d+\.?\d*[\),\]]"
+    UNTIL_pattern13 = r"UNTIL[\[,\(]-?\d+\.?\d*,\+?inf[\),\]]"
+    UNTIL_pattern14 = r"UNTIL[\[,\(]-inf,-?\d+\.?\d*[\),\]]"
 
 
     # check whether it is a since or a until literal
@@ -386,7 +391,7 @@ def parse_literal(literal):
         #result = re.findall("|".join([pattern12_2]), literal)
         result = re.findall("|".join([pattern9, pattern10, pattern11, pattern12, pattern12_1, pattern12_2, pattern13, pattern14,
                                       pattern15, pattern16, pattern16_1, pattern16_2, pattern5, pattern6, pattern7, pattern8,  pattern8_1, pattern8_2, pattern1,
-                                      pattern2, pattern3, pattern4, pattern4_1, pattern4_2]), literal)
+                                      pattern2, pattern3, pattern4, pattern4_1, pattern4_2, boxc_pattern, diamondc_pattern]), literal)
         if len(result) != 0:
             operators = []
             for operator_str in result:

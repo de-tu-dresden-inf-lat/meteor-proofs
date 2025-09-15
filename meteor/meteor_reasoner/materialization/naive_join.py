@@ -5,7 +5,7 @@ from collections import defaultdict
 from meteor_reasoner.materialization.index_build import build_index
 from meteor_reasoner.utils.operate_dataset import print_dataset
 from meteor_reasoner.materialization.coalesce import coalescing_d
-from meteor_reasoner.materialization.ifCD import ifCD,isCD
+from meteor_reasoner.materialization.ifCD import isCD
 
 
 def naive_join(rule, D, delta_new, D_index=None, must_literals=None, graph=None):
@@ -28,10 +28,8 @@ def naive_join(rule, D, delta_new, D_index=None, must_literals=None, graph=None)
     def ground_body(global_literal_index, delta, context):
         if global_literal_index == len(literals):
             T = []
-            # dnh: For atoms in body rule
+            # dnh: For atoms in rule body
             outermost_literals = defaultdict(list)
-            # dnh: For atoms/literals in nested inside temporal operators with the first level of nesting is simply an atom
-            nested_literals = defaultdict(list)
             '''
             dnh: Go through all the literals in the body of the rule and apply MTL ops to literals
             '''
@@ -44,25 +42,21 @@ def naive_join(rule, D, delta_new, D_index=None, must_literals=None, graph=None)
                     if grounded_literal.get_predicate() not in ["Bottom", "Top"]:
                         grounded_literal.set_entity(delta[i][0])
                 
-                if not isCD(grounded_literal.get_predicate()):
-                # Operators are popped here
-                    if graph is not None:
-                        t = apply(grounded_literal, D, outermost_literals=outermost_literals, nested_literals=nested_literals)
-                    else:
-                        t = apply(grounded_literal, D)
-                # dnh: grounded literals satisfy the body of the rule at times t
-                # i.e: head rule can be deduced at times t
+                if isCD(grounded_literal.get_predicate()):
+                    # CD literals are checked during grounding, so we can assume they are always true
+                    t = [Interval(float('-inf'), float('inf'), True, True)]
                 else:
-                     if ifCD(grounded_literal.get_predicate(),delta[i][0]):
-                         t = [Interval(float('-inf'), float('inf'), True, True)]
-                     else:
-                         t = []
+                    # Temporal operators of ordinary literals are popped here
+                    t = apply(grounded_literal, D, graph=graph)
                 if len(t) == 0:
                     break
                 else:
                     T.append(t)
+                    if graph is not None:
+                        outermost_literals[grounded_literal] = t
                     if must_literals is not None:
                         must_literals[grounded_literal] += t
+            
             n_T = []
             for i in range(len(rule.body), len(literals)):
                 grounded_literal = copy.deepcopy(literals[i])
@@ -106,8 +100,6 @@ def naive_join(rule, D, delta_new, D_index=None, must_literals=None, graph=None)
 
             # If all literals appear in some time interval (T)
             if len(T) == len(literals):
-                # dnh: 26/05 new rule for interval merge intersection rule generalization
-                # og_len = len(T)
                 T = interval_merge(T)
                 exclude_t = []
                 if len(T) != 0 and len(n_T) != 0:
@@ -115,60 +107,12 @@ def naive_join(rule, D, delta_new, D_index=None, must_literals=None, graph=None)
                 if len(exclude_t) != 0:
                     T = Interval.diff(T, exclude_t)
                 # If all literals appear TOGETHER in some time interval (T)
-                # after_merge_len = len(T)
-                # if after_merge_len >  og_len:
-                #     print("Og and after merge len: ", og_len, after_merge_len)
                 if len(T) != 0:
                     if graph is not None:
-                        # Add nested rules to graph
-                        if len(nested_literals) != 0:
-                            def do_profile_1():
-                                for lit, rs in nested_literals.items():
-                                    succ = lit.__str__()
-                                    for r in rs:
-                                        el = {}
-                                        el["succ"] = {
-                                            "alpha": succ,
-                                            "interval": r["interval"].__str__()
-                                        }
-                                        el["rule"] = r["rule"]
-                                        el["pred"] = { k: v.__str__() for k,v in r.items() if k not in ["interval", "rule"] }
-                                        graph.append(el)
-                            do_profile_1()
-                        def do_profile_2():
-                            for interval in T:
-                                el = defaultdict(list)
-                                # Succ
-                                # if isinstance(rule.head, Atom):
-                                if rule.head.get_op_name() is None:
-                                    a_succ = Atom(head_predicate, entity=replaced_head_entity, interval=interval).__str__()
-                                else:
-                                    alpha = copy.deepcopy(rule.head)
-                                    alpha.set_entity(replaced_head_entity)
-                                    a_succ = { "alpha": alpha.__str__(), "interval": interval.__str__() }
-
-                                el["succ"] = a_succ
-                                el["rule"] = rule.__str__()
-                                for lit, intvs in outermost_literals.items():
-                                    # Pred
-                                    for intv in intvs:
-                                        # Intermediate step
-                                        if isinstance(intv, dict):
-                                            s_intv = Interval.inclusion(interval, intv['interval'])
-                                            if s_intv:
-                                                a_pred = lit.__str__()
-                                                # if intv["rule"] in ["until", "since"]:
-                                                #     r_str = {k: v.__str__() for k, v in intv.items()}
-                                                #     el["pred"].append(r_str)
-                                                # else:
-                                                el["pred"].append({ "alpha": a_pred, "interval": intv["interval"].__str__() })
-                                        else:
-                                            s_intv = Interval.inclusion(interval, intv)
-                                            if s_intv:
-                                                a_pred = Atom(lit.get_predicate(), entity=lit.get_entity(), interval=intv).__str__()
-                                                el["pred"].append(a_pred)
-                                graph.append(el)
-                        do_profile_2()
+                        for interval in T:
+                            conclusion = (Atom(head_predicate, replaced_head_entity), interval)
+                            premises = [(lit, intv) for lit, intvs in outermost_literals.items() for intv in intvs if Interval.inclusion(interval, intv)]
+                            graph.extend(conclusion, str(rule), *premises)
 
                     if not isinstance(rule.head, Atom):
                         # Remark: Was wrong, already rewrote this
@@ -178,27 +122,8 @@ def naive_join(rule, D, delta_new, D_index=None, must_literals=None, graph=None)
                         if must_literals is not None:
                             must_literals[tmp_head] += T
 
-                        nested_literals = defaultdict(list)
-                        # T = reverse_apply(tmp_head, tmp_D, nested_literals=nested_literals)
                         tmp_T = copy.deepcopy(T)
-                        T = reverse_apply(tmp_head, tmp_T, nested_literals=nested_literals)
-                        if graph is not None:
-                            def do_profile_3():
-                                for lit, rs in nested_literals.items():
-                                    for intv in rs:
-                                        el = {}
-                                        if intv['alpha'].get_op_name() is None:
-                                            a_succ = Atom(intv['alpha'].get_predicate(), entity=intv['alpha'].get_entity(), interval=intv['interval']).__str__()
-                                        else:
-                                            a_succ = {
-                                                    "alpha": intv['alpha'].__str__(),
-                                                    "interval": intv['interval'].__str__()
-                                            }
-                                        el["succ"] = a_succ
-                                        el["rule"] = intv['rule']
-                                        el["pred"] = { "alpha": lit.__str__(), "interval": intv["roh_1"].__str__() }
-                                        graph.append(el)
-                            do_profile_3()
+                        T = reverse_apply(tmp_head, tmp_T, graph=graph)
 
                     delta_new[head_predicate][replaced_head_entity] += T
                     # dnh: Used only in some experiments

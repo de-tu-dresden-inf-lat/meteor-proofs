@@ -12,13 +12,9 @@ def entail(fact, D, graph=None):
             for interval in intervals:
                 if Interval.inclusion(fact.interval, interval):
                     if graph is not None:
-                        atom = Atom(fact.predicate, entity=fact.entity, interval=interval)
-                        el = {
-                            "succ": fact.__str__(),
-                            "rule": "inclusion",
-                            "pred": atom.__str__(),
-                        }
-                        graph.append(el)
+                        atom = Atom(fact.predicate, fact.entity)
+                        graph.extend((atom, fact.interval), "inclusion", (atom, interval))
+                        graph.set_conclusion = (atom, fact.interval)
                     return True
             else:
                 return False

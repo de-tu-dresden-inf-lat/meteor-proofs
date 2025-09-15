@@ -1,17 +1,18 @@
 class Operator:
     """
     The operator class is designed for storing six MTL operators, e.g., Boxminus[1,2],
-    Boxplus(1,2), Diamondplus[3,4], Diamondminus[1,2], Since[1,2], Until[2,3]
+    Boxplus(1,2), Diamondplus[3,4], Diamondminus[1,2], Since[1,2], Until[2,3], and the
+    convex operators Boxc[4], Diamondc[6]
     """
     def __init__(self, name, interval):
         """
         Args:
-            name (str): Boxminus, Boxplus, Diamondplus, Diamondminus, Since, Until
-            interval (Interval class):
+            name (str): Boxminus, Boxplus, Diamondplus, Diamondminus, Since, Until, Boxc, Diamondc
+            interval (Interval class): The interval associated with the operator (or a single value)
         """
-        if name not in ["Boxminus", "Boxplus", "Diamondplus", "Diamondminus", "Since", "Until"]:
-            raise ValueError("Only support one of six operators (Boxminus, Boxplus, Diamondplus, "
-                             "Diamondminus, Since, Until)!")
+        if name not in ["Boxminus", "Boxplus", "Diamondplus", "Diamondminus", "Since", "Until", "Boxc", "Diamondc"]:
+            raise ValueError("Only support one of eight operators (Boxminus, Boxplus, Diamondplus, "
+                             "Diamondminus, Since, Until, Boxc, Diamondc)!")
 
         self.name = name
         self.interval = interval
@@ -23,7 +24,10 @@ class Operator:
         return False
 
     def __str__(self):
-        return self.name + str(self.interval)
+        if self.name in ["Boxc", "Diamondc"]:
+            return self.name + "[" + str(self.interval) + "]"
+        else:
+            return self.name + str(self.interval)
 
 
 class Literal:

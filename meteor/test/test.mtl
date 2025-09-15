@@ -1,0 +1,4 @@
+B(X) :- Boxc[10] A(X)
+C(X) :- Diamondc[10] A(X)
+Boxplus[10,10]D(X) :- B(X)
+E(X) :- C(X), D(X)

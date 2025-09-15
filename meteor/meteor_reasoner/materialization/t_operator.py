@@ -5,17 +5,13 @@ from collections import defaultdict
 
 def naive_immediate_consequence_operator(rules, D, D_index, graph=None):
     delta_new = defaultdict(lambda: defaultdict(list))
-    for i, rule in enumerate(rules):
-        if graph is None:
-            naive_join(rule, D, delta_new, D_index)
-        else:
-            naive_join(rule, D, delta_new, D_index, graph=graph)
+    for _, rule in enumerate(rules):
+        naive_join(rule, D, delta_new, D_index, graph=graph)
     return delta_new
 
 
-def seminaive_immediate_consequence_operator(rules, D, D_index, delta_old=None):
+def seminaive_immediate_consequence_operator(rules, D, D_index, delta_old=None, graph=None):
     delta_new = defaultdict(lambda: defaultdict(list))
-    for i, rule in enumerate(rules):
-        seminaive_join(rule, D, delta_old, delta_new, D_index=D_index)
-
+    for _, rule in enumerate(rules):
+        seminaive_join(rule, D, delta_old, delta_new, D_index=D_index, graph=graph)
     return delta_new

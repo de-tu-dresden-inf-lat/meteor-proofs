@@ -5,9 +5,10 @@ from collections import defaultdict
 from meteor_reasoner.materialization.index_build import build_index
 from meteor_reasoner.utils.operate_dataset import print_dataset
 from meteor_reasoner.materialization.coalesce import coalescing_d
+from meteor_reasoner.materialization.ifCD import isCD
 
 
-def seminaive_join(rule, D,  delta_old, delta_new, D_index=None, must_literals=None):
+def seminaive_join(rule, D,  delta_old, delta_new, D_index=None, must_literals=None, graph=None):
     """
     This function implement the join operator when variables exist in the body of the rule.
     Args:
@@ -25,6 +26,7 @@ def seminaive_join(rule, D,  delta_old, delta_new, D_index=None, must_literals=N
     def ground_body(global_literal_index, visited, delta, context):
         if global_literal_index == len(literals):
             T = []
+            outermost_literals = defaultdict(list)
             for i in range(len(rule.body)):
                 grounded_literal = copy.deepcopy(literals[i])
                 if isinstance(grounded_literal, BinaryLiteral):
@@ -32,16 +34,22 @@ def seminaive_join(rule, D,  delta_old, delta_new, D_index=None, must_literals=N
                 else:
                     if grounded_literal.get_predicate() not in ["Bottom", "Top"]:
                         grounded_literal.set_entity(delta[i][0])
-                if i == visited:
-                    t = apply(grounded_literal, delta_old)
-                elif i <= visited:
-                    t = apply(grounded_literal, D)
+                if isCD(grounded_literal.get_predicate()):
+                    # CD literals are checked during grounding, so we can assume they are always true
+                    t = [Interval(float('-inf'), float('inf'), True, True)]
                 else:
-                    t = apply(grounded_literal, D, delta_old)
+                    if i == visited:
+                        t = apply(grounded_literal, delta_old, graph=graph)
+                    elif i <= visited:
+                        t = apply(grounded_literal, D, graph=graph)
+                    else:
+                        t = apply(grounded_literal, D, delta_old, graph=graph)
                 if len(t) == 0:
                     break
                 else:
                     T.append(t)
+                    if graph is not None:
+                        outermost_literals[grounded_literal] = t
                     if must_literals is not None:
                         must_literals[grounded_literal] += t
 
@@ -89,14 +97,21 @@ def seminaive_join(rule, D,  delta_old, delta_new, D_index=None, must_literals=N
                     T = Interval.diff(T, exclude_t)
 
                 if len(T) != 0:
+                    if graph is not None:
+                        for interval in T:
+                            conclusion = (Atom(head_predicate, replaced_head_entity), interval)
+                            premises = [(lit, intv) for lit, intvs in outermost_literals.items() for intv in intvs if Interval.inclusion(interval, intv)]
+                            graph.extend(conclusion, str(rule), *premises)
+                    
                     if not isinstance(rule.head, Atom):
-                        tmp_D = defaultdict(lambda: defaultdict(list))
-                        tmp_D[head_predicate][replaced_head_entity] = T
                         tmp_head = copy.deepcopy(rule.head)
                         tmp_head.set_entity(replaced_head_entity)
+
                         if must_literals is not None:
                             must_literals[tmp_head] += T
-                        T = reverse_apply(tmp_head, tmp_D)
+
+                        tmp_T = copy.deepcopy(T)
+                        T = reverse_apply(tmp_head, tmp_T, graph=graph)
 
                     delta_new[head_predicate][replaced_head_entity] += T
 

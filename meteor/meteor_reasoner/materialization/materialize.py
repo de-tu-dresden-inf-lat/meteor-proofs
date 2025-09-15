@@ -24,7 +24,7 @@ def calculate_redundancy(delta, old):
     return cnt
 
 
-def seminaive_combine(D, delta_new, delta_old, D_index=None):
+def seminaive_combine(D, delta_new, delta_old, D_index=None, graph=None):
     for head_predicate in delta_new:
         for entity, T in delta_new[head_predicate].items():
             if head_predicate not in D or entity not in D[head_predicate]:
@@ -40,7 +40,7 @@ def seminaive_combine(D, delta_new, delta_old, D_index=None):
                                 continue
                             D_index[head_predicate][str(i) + "@" + item1.name + "||" + str(j) + "@" + item2.name].append(entity)
             else:
-                coalesced_T = coalescing(T + D[head_predicate][entity])
+                coalesced_T = coalescing(T + D[head_predicate][entity], Atom(head_predicate,entity), graph=graph)
                 if not Interval.compare(coalesced_T, D[head_predicate][entity]):
                     for interval1 in coalesced_T:
                         flag = True
@@ -55,13 +55,12 @@ def seminaive_combine(D, delta_new, delta_old, D_index=None):
                     D[head_predicate][entity] = coalesced_T
     fixpoint = True
     if len(delta_old) != 0:
-        coalescing_d(D)
-        coalescing_d(delta_old)
+        coalescing_d(D, graph=graph)
+        coalescing_d(delta_old, graph=graph)
         fixpoint = False
     return fixpoint
 
 
-# dnh 31/05: Coalescing for union of intervals
 def naive_combine(D, delta_new, D_index=None, graph=None):
     fixpoint = True
     for head_predicate in delta_new:
@@ -83,7 +82,7 @@ def naive_combine(D, delta_new, D_index=None, graph=None):
                                 continue
                             D_index[head_predicate][str(i) + "@" + item1.name + "||" + str(j) + "@" + item2.name].append(entity)
             else:
-                coalesced_T = coalescing(T + D[head_predicate][entity], entity=entity, predicate=head_predicate, graph=graph)
+                coalesced_T = coalescing(T + D[head_predicate][entity], atom=Atom(head_predicate, entity), graph=graph)
                 if fixpoint:
                     if coalesced_T != D[head_predicate][entity]:
                         fixpoint = False
@@ -95,7 +94,7 @@ def naive_combine(D, delta_new, D_index=None, graph=None):
     return fixpoint
 
 
-def materialize(D, rules, mode="seminaive", K=100, logger=None, must_literals=None, metrics=None, graph=None, fakt=None):
+def materialize(D, rules, mode="seminaive", K=100, logger=None, must_literals=None, metrics=None, graph=None, fact=None):
     """
     The function implements the materialization operation.
     Args:
@@ -119,20 +118,20 @@ def materialize(D, rules, mode="seminaive", K=100, logger=None, must_literals=No
         start_time = time.time()
         calc_time = 0.0
 
-    if graph is not None and seminaive:
-        raise Exception("Glassbox with semi-naive is not supported yet")
-
     while k < K:
         print("Iteration:", k)
+        print_dataset(D)
         k += 1
         if seminaive:
-            delta_new = seminaive_immediate_consequence_operator(rules, D, D_index, delta_old=delta_old)
+            delta_new = seminaive_immediate_consequence_operator(rules, D, D_index, delta_old=delta_old, graph=graph)
         else:
             delta_new = naive_immediate_consequence_operator(rules, D, D_index, graph=graph)
 
         if seminaive:
             delta_old = defaultdict(lambda: defaultdict(list))
-            fixpoint = seminaive_combine(D, delta_new, delta_old, D_index)
+            if fact is not None:
+                entail(fact, delta_new, graph=graph)
+            fixpoint = seminaive_combine(D, delta_new, delta_old, D_index, graph=graph)
             if logger is not None:
                 tmp_start_time = time.time()
                 coalescing_d(delta_new)
@@ -146,7 +145,9 @@ def materialize(D, rules, mode="seminaive", K=100, logger=None, must_literals=No
         else:
             if logger is not None:
                 delta_old = defaultdict(lambda: defaultdict(list))
-                fixpoint = seminaive_combine(D, delta_new, delta_old, D_index)
+                if fact is not None:
+                    entail(fact, delta_new, graph=graph)
+                fixpoint = seminaive_combine(D, delta_new, delta_old, D_index, graph=graph)
                 coalescing_d(delta_new)
                 number_of_redundant_facts = calculate_redundancy(delta_new, delta_old)
                 total_number = 0
@@ -155,8 +156,8 @@ def materialize(D, rules, mode="seminaive", K=100, logger=None, must_literals=No
                         total_number += len(D[predicate][entity])
                 logger.info("Iteration={}, t={}, D={}, n={}".format(k, time.time() - start_time - calc_time, total_number, number_of_redundant_facts))
             else:
-                if fakt is not None:
-                    entail(fakt, delta_new, graph=graph)
+                if fact is not None:
+                    entail(fact, delta_new, graph=graph)
                 fixpoint = naive_combine(D, delta_new, D_index, graph=graph)
 
         if fixpoint:
