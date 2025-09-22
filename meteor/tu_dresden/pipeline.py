@@ -1,7 +1,7 @@
 import sys
-sys.path.append('../')
+sys.path.append('./')
 
-from meteor.meteor_reasoner.utils.hypergraph import HyperGraph
+from meteor_reasoner.utils.hypergraph import HyperGraph
 from meteor_reasoner.materialization.index_build import *
 from meteor_reasoner.materialization.coalesce import *
 from meteor_reasoner.utils.loader import load_dataset, load_program
@@ -20,7 +20,7 @@ import pstats
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--facts", default="10000", type=str, help="Input the dataset path")
-parser.add_argument("--rulepath", default="programs/p.txt", type=str, help="Input the program path")
+parser.add_argument("--rulepath", default="tu_dresden/programs/p.txt", type=str, help="Input the program path")
 parser.add_argument("--glassbox", default="1", type=str, help="Do Glassbox tracing")
 parser.add_argument("--profile", default="0", type=str, help="Do profiling")
 parser.add_argument("--drone", default="false", type=str, help="If testing for the drone ontology")
@@ -37,8 +37,8 @@ if args.drone == "false":
     data_path_relative = f"output/{nr_facts}.txt"
 else:
     nr_facts = args.drone  #can be a string
-    rulepath = "../../../drone-ontologies/advanced/program.txt"
-    data_path_relative = f"drones/NLGexamples/{nr_facts}/dataset.txt"
+    rulepath = "tu_dresden/programs/droneprogram.txt"
+    data_path_relative = f"drones/NLGexamples/test/{nr_facts}/dataset.txt"
 
 data_path = os.path.join(current_path, data_path_relative)
 
@@ -52,7 +52,7 @@ try:
     elif args.drone == "false":
         fact_path = f"data/T4_{nr_facts}.txt"
     else:
-        fact_path = f"drones/NLGexamples/{nr_facts}/entailment.txt"
+        fact_path = f"tu_dresden/drones/NLGexamples/test/{nr_facts}/entailment.txt"
     with open(fact_path, "r") as file:
         fact = file.readlines()[0].strip()
 
@@ -87,7 +87,7 @@ def run():
         return True
     else:
         while True:
-            flag = materialize(D, rules=program, mode="naive", K=1, graph=graph, fakt=F)
+            flag = materialize(D, rules=program, mode="seminaive", K=100, graph=graph, fact=F)
             if entail(F, D, graph=graph):
                 return True
             else:
@@ -129,7 +129,7 @@ if glassbox == "1" and entailment and do_profile == "0":
     elif args.drone == "false":
         file_path = f"json_1/{nr_facts}.json"
     else:
-        drone_ds = "drones/ds"
+        drone_ds = "tu_dresden/drones/ds"
         if not os.path.isdir(drone_ds):
             os.mkdir(drone_ds)
         nr_facts_folder = nr_facts.split('/')
@@ -147,7 +147,7 @@ print("Total time: ", TOTAL_TIME)
 
 if glassbox == "1" and entailment:
     with open("trace_time.txt", "a") as f:
-        f.write(f"{nr_facts} : {LOADING_TIME} : {REASONING_TIME} : {PARSING_TIME} : {TOTAL_TIME} : {len(graph)} : {len([*yield_dataset(D)])} : {len(parser.edges)}\n")
+        f.write(f"{nr_facts} : {LOADING_TIME} : {REASONING_TIME} : {PARSING_TIME} : {TOTAL_TIME} : {len(graph.edges)} : {len([*yield_dataset(D)])} \n")
 else:
     with open("time.txt", "a") as f:
         f.write(f"{nr_facts} : {LOADING_TIME} : {REASONING_TIME} : {PARSING_TIME} : {TOTAL_TIME}\n")

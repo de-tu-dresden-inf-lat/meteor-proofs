@@ -19,6 +19,7 @@ def ground_generator(literal, context, D, D_index=None, delta_old=None, visited=
     entity = copy.deepcopy(literal.get_entity())
     
     if visited:
+        # cannot be a CD constraint
         if predicate not in delta_old:
             return
 
@@ -57,11 +58,14 @@ def ground_generator(literal, context, D, D_index=None, delta_old=None, visited=
                 else:
                     yield tmp_entity, tmp_context
 
-    elif not flag:
-        if predicate not in D and isCD(predicate):
-            #concrete domain
+    else: 
+        if predicate not in D:
+            if not isCD(predicate):
+                return
+            # concrete domain
             if not contain_variable(entity):
-                yield entity, dict()
+                if ifCD(predicate, entity):
+                    yield entity, dict()
             elif not contain_variable_after_replace(entity, context):
                 replaced_entity = []
                 for term in entity:
@@ -72,7 +76,8 @@ def ground_generator(literal, context, D, D_index=None, delta_old=None, visited=
                     else:
                         replaced_entity.append(term)
                 replaced_entity = tuple(replaced_entity)
-                yield tuple(replaced_entity), dict()
+                if ifCD(predicate, tuple(replaced_entity)):
+                    yield tuple(replaced_entity), dict()
             else:
                 print("Error: a CD constraint was not grounded properly")
                 print(predicate)
@@ -81,60 +86,43 @@ def ground_generator(literal, context, D, D_index=None, delta_old=None, visited=
                 print(context)
                 return
 
-        if len(entity) == 1 and entity[0].name == "nan":
-            yield entity, dict()
+        if not flag:
 
-        elif not contain_variable(entity):
-            if predicate in D and entity in D[predicate]:
+            if len(entity) == 1 and entity[0].name == "nan":
                 yield entity, dict()
 
-        elif not contain_variable_after_replace(entity, context):
-            replaced_entity = []
-            for term in entity:
-                if term.type == "variable":
-                    term.type = "constant"
-                    term.name = context[term.name]
-                    replaced_entity.append(term)
-                else:
-                    replaced_entity.append(term)
-            replaced_entity = tuple(replaced_entity)
-            if (predicate in D and tuple(replaced_entity) in D[predicate]) or (isCD(predicate) and ifCD(predicate, tuple(replaced_entity))):
-                yield tuple(replaced_entity), dict()
-        else:
-            if D_index is not None:
-                index_str = []
-                for i, term in enumerate(entity):
-                    if term.type == "constant":
-                        index_str.append(str(i) + "@" + term.name)
+            elif not contain_variable(entity):
+                if predicate in D and entity in D[predicate]:
+                    yield entity, dict()
+
+            elif not contain_variable_after_replace(entity, context):
+                replaced_entity = []
+                for term in entity:
+                    if term.type == "variable":
+                        term.type = "constant"
+                        term.name = context[term.name]
+                        replaced_entity.append(term)
                     else:
-                        # If context avaiable, replace variable with constant in context
-                        if term.name in context:
-                            index_str.append(str(i) + "@" + context[term.name])
-                index_str = "||".join(index_str)
-                # If nothing is replaced, generate entity and context from current D
-                if len(index_str) == 0:
-                    for constant_entity in D[predicate]:
-                        tmp_context = dict()
-                        # Replacing variable with constant
-                        for term1, term2 in zip(entity, constant_entity):
-                            if term1.type == "constant" and term1.name != term2.name:
-                                break
-                            elif term1.type == "variable" and term1.name in context and context[
-                                term1.name] != term2.name:
-                                break
-                            elif term1.type == "variable" and term1.name in tmp_context and tmp_context[
-                                term1.name] != term2.name:
-                                break
-                            else:
-                                if term1.type == "variable":
-                                    tmp_context[term1.name] = term2.name
+                        replaced_entity.append(term)
+                replaced_entity = tuple(replaced_entity)
+                if predicate in D and tuple(replaced_entity) in D[predicate]:
+                    yield tuple(replaced_entity), dict()
+            else:
+                if D_index is not None:
+                    index_str = []
+                    for i, term in enumerate(entity):
+                        if term.type == "constant":
+                            index_str.append(str(i) + "@" + term.name)
                         else:
-                            # Yield the replaced entity and context
-                            yield constant_entity, tmp_context
-                else:
-                    if index_str in D_index[predicate]:
-                        for constant_entity in D_index[predicate][index_str]:
+                            # If context avaiable, replace variable with constant in context
+                            if term.name in context:
+                                index_str.append(str(i) + "@" + context[term.name])
+                    index_str = "||".join(index_str)
+                    # If nothing is replaced, generate entity and context from current D
+                    if len(index_str) == 0:
+                        for constant_entity in D[predicate]:
                             tmp_context = dict()
+                            # Replacing variable with constant
                             for term1, term2 in zip(entity, constant_entity):
                                 if term1.type == "constant" and term1.name != term2.name:
                                     break
@@ -148,76 +136,34 @@ def ground_generator(literal, context, D, D_index=None, delta_old=None, visited=
                                     if term1.type == "variable":
                                         tmp_context[term1.name] = term2.name
                             else:
+                                # Yield the replaced entity and context
                                 yield constant_entity, tmp_context
-
-            else:
-                for tmp_entity in D[predicate]:
-                    tmp_context = dict()
-                    for term1, term2 in zip(entity, tmp_entity):
-                        if term1.type == "constant" and term1.name != term2.name:
-                            break
-                        elif term1.type == "variable" and term1.name in context and context[term1.name] != term2.name:
-                            break
-                        elif term1.type == "variable" and term1.name in tmp_context and tmp_context[
-                            term1.name] != term2.name:
-                            break
-                        else:
-                            if term1.type == "variable":
-                                tmp_context[term1.name] = term2.name
                     else:
-                        yield tmp_entity, tmp_context
-    else:
-        # index > visited
-        if predicate not in D:
-            return
+                        if index_str in D_index[predicate]:
+                            for constant_entity in D_index[predicate][index_str]:
+                                tmp_context = dict()
+                                for term1, term2 in zip(entity, constant_entity):
+                                    if term1.type == "constant" and term1.name != term2.name:
+                                        break
+                                    elif term1.type == "variable" and term1.name in context and context[
+                                        term1.name] != term2.name:
+                                        break
+                                    elif term1.type == "variable" and term1.name in tmp_context and tmp_context[
+                                        term1.name] != term2.name:
+                                        break
+                                    else:
+                                        if term1.type == "variable":
+                                            tmp_context[term1.name] = term2.name
+                                else:
+                                    yield constant_entity, tmp_context
 
-        if len(entity) == 1 and entity[0].name == "nan":
-            if predicate in delta_old and entity in delta_old[predicate]:
-                if Interval.list_inclusion(D[predicate][entity], delta_old[predicate][entity]):
-                    return
-            yield entity, dict()
-
-        elif not contain_variable(entity):
-            if predicate in D and entity in D[predicate]:
-                if predicate in delta_old and entity in delta_old[predicate]:
-                    if Interval.list_inclusion(D[predicate][entity], delta_old[predicate][entity]):
-                        return
-                yield entity, dict()
-
-        elif not contain_variable_after_replace(entity, context):
-            replaced_entity = []
-            for term in entity:
-                if term.type == "variable":
-                    term.type = "constant"
-                    term.name = context[term.name]
-                    replaced_entity.append(term)
                 else:
-                    replaced_entity.append(term)
-            replaced_entity = tuple(replaced_entity)
-            if predicate in D and tuple(replaced_entity) in D[predicate]:
-                if predicate in delta_old and replaced_entity in delta_old[predicate]:
-                    if Interval.list_inclusion(D[predicate][replaced_entity], delta_old[predicate][replaced_entity]):
-                        return
-                yield tuple(replaced_entity), dict()
-        else:
-            if D_index is not None:
-                index_str = []
-                for i, term in enumerate(entity):
-                    if term.type == "constant":
-                        index_str.append(str(i) + "@" + term.name)
-                    else:
-                        if term.name in context:
-                            index_str.append(str(i) + "@" + context[term.name])
-
-                index_str = "||".join(index_str)
-                if len(index_str) == 0:
-                    for constant_entity in D[predicate]:
+                    for tmp_entity in D[predicate]:
                         tmp_context = dict()
-                        for term1, term2 in zip(entity, constant_entity):
+                        for term1, term2 in zip(entity, tmp_entity):
                             if term1.type == "constant" and term1.name != term2.name:
                                 break
-                            elif term1.type == "variable" and term1.name in context and context[
-                                term1.name] != term2.name:
+                            elif term1.type == "variable" and term1.name in context and context[term1.name] != term2.name:
                                 break
                             elif term1.type == "variable" and term1.name in tmp_context and tmp_context[
                                 term1.name] != term2.name:
@@ -226,14 +172,51 @@ def ground_generator(literal, context, D, D_index=None, delta_old=None, visited=
                                 if term1.type == "variable":
                                     tmp_context[term1.name] = term2.name
                         else:
-                            if predicate in delta_old and constant_entity in delta_old[predicate]:
-                                if Interval.list_inclusion(D[predicate][constant_entity],
-                                                           delta_old[predicate][constant_entity]):
-                                    continue
-                            yield constant_entity, tmp_context
-                else:
-                    if index_str in D_index[predicate]:
-                        for constant_entity in D_index[predicate][index_str]:
+                            yield tmp_entity, tmp_context
+        else:
+            # index > visited
+
+            if len(entity) == 1 and entity[0].name == "nan":
+                if predicate in delta_old and entity in delta_old[predicate]:
+                    if Interval.list_inclusion(D[predicate][entity], delta_old[predicate][entity]):
+                        return
+                yield entity, dict()
+
+            elif not contain_variable(entity):
+                if predicate in D and entity in D[predicate]:
+                    if predicate in delta_old and entity in delta_old[predicate]:
+                        if Interval.list_inclusion(D[predicate][entity], delta_old[predicate][entity]):
+                            return
+                    yield entity, dict()
+
+            elif not contain_variable_after_replace(entity, context):
+                replaced_entity = []
+                for term in entity:
+                    if term.type == "variable":
+                        term.type = "constant"
+                        term.name = context[term.name]
+                        replaced_entity.append(term)
+                    else:
+                        replaced_entity.append(term)
+                replaced_entity = tuple(replaced_entity)
+                if predicate in D and tuple(replaced_entity) in D[predicate]:
+                    if predicate in delta_old and replaced_entity in delta_old[predicate]:
+                        if Interval.list_inclusion(D[predicate][replaced_entity], delta_old[predicate][replaced_entity]):
+                            return
+                    yield tuple(replaced_entity), dict()
+            else:
+                if D_index is not None:
+                    index_str = []
+                    for i, term in enumerate(entity):
+                        if term.type == "constant":
+                            index_str.append(str(i) + "@" + term.name)
+                        else:
+                            if term.name in context:
+                                index_str.append(str(i) + "@" + context[term.name])
+
+                    index_str = "||".join(index_str)
+                    if len(index_str) == 0:
+                        for constant_entity in D[predicate]:
                             tmp_context = dict()
                             for term1, term2 in zip(entity, constant_entity):
                                 if term1.type == "constant" and term1.name != term2.name:
@@ -250,31 +233,53 @@ def ground_generator(literal, context, D, D_index=None, delta_old=None, visited=
                             else:
                                 if predicate in delta_old and constant_entity in delta_old[predicate]:
                                     if Interval.list_inclusion(D[predicate][constant_entity],
-                                                               delta_old[predicate][constant_entity]):
+                                                            delta_old[predicate][constant_entity]):
                                         continue
                                 yield constant_entity, tmp_context
-
-            else:
-                for tmp_entity in D[predicate]:
-                    tmp_context = dict()
-                    for term1, term2 in zip(entity, tmp_entity):
-                        if term1.type == "constant" and term1.name != term2.name:
-                            break
-                        elif term1.type == "variable" and term1.name in context and context[term1.name] != term2.name:
-                            break
-                        elif term1.type == "variable" and term1.name in tmp_context and tmp_context[
-                            term1.name] != term2.name:
-                            break
-                        else:
-                            if term1.type == "variable":
-                                tmp_context[term1.name] = term2.name
                     else:
-                        if predicate in delta_old and tmp_entity in delta_old[predicate]:
-                            if Interval.list_inclusion(D[predicate][tmp_entity],
-                                                       delta_old[predicate][tmp_entity]):
-                                continue
+                        if index_str in D_index[predicate]:
+                            for constant_entity in D_index[predicate][index_str]:
+                                tmp_context = dict()
+                                for term1, term2 in zip(entity, constant_entity):
+                                    if term1.type == "constant" and term1.name != term2.name:
+                                        break
+                                    elif term1.type == "variable" and term1.name in context and context[
+                                        term1.name] != term2.name:
+                                        break
+                                    elif term1.type == "variable" and term1.name in tmp_context and tmp_context[
+                                        term1.name] != term2.name:
+                                        break
+                                    else:
+                                        if term1.type == "variable":
+                                            tmp_context[term1.name] = term2.name
+                                else:
+                                    if predicate in delta_old and constant_entity in delta_old[predicate]:
+                                        if Interval.list_inclusion(D[predicate][constant_entity],
+                                                                delta_old[predicate][constant_entity]):
+                                            continue
+                                    yield constant_entity, tmp_context
 
-                        yield tmp_entity, tmp_context
+                else:
+                    for tmp_entity in D[predicate]:
+                        tmp_context = dict()
+                        for term1, term2 in zip(entity, tmp_entity):
+                            if term1.type == "constant" and term1.name != term2.name:
+                                break
+                            elif term1.type == "variable" and term1.name in context and context[term1.name] != term2.name:
+                                break
+                            elif term1.type == "variable" and term1.name in tmp_context and tmp_context[
+                                term1.name] != term2.name:
+                                break
+                            else:
+                                if term1.type == "variable":
+                                    tmp_context[term1.name] = term2.name
+                        else:
+                            if predicate in delta_old and tmp_entity in delta_old[predicate]:
+                                if Interval.list_inclusion(D[predicate][tmp_entity],
+                                                        delta_old[predicate][tmp_entity]):
+                                    continue
+
+                            yield tmp_entity, tmp_context
 
 
 if __name__ == "__main__":
