@@ -1,3 +1,5 @@
+import sys
+sys.path.append('C:\\Users\\e2hiw\\Documents\\AirSim\\AirSim\\PythonClient\\dl\\meteor_proofs\\meteor')
 from meteor_reasoner.utils.parser import *
 from collections import defaultdict
 import time, os, datetime

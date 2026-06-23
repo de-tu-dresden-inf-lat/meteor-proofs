@@ -47,16 +47,16 @@ def ifCD(predicate,entity):
         #convert the numbers
             cd_coefficients = []
             try:
-                cd_right_side = int(str_right_side)
+                cd_right_side = float(str_right_side)
                 for i in str_coefficients:
-                    cd_coefficients.append(int(i))
+                    cd_coefficients.append(float(i))
             except:
                 print("Error: in the brackets of " + predicate + " there must be numbers")
                 return False
             num = []
             try:
                 for i in entity:
-                    num.append(int(i.name))
+                    num.append(float(i.name))
             except:
                 print("Constants " + entity[0].name + ", " + entity[1].name + " must be  numbers")
                 return False

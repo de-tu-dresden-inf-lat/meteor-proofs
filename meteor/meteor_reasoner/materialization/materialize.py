@@ -1,3 +1,5 @@
+import sys
+sys.path.append('C:\\Users\\e2hiw\\Documents\\AirSim\\AirSim\\PythonClient\\dl\\meteor_proofs\\meteor')
 from meteor_reasoner.materialization.t_operator import *
 from meteor_reasoner.materialization.coalesce import *
 from meteor_reasoner.materialization.index_build import *
@@ -7,6 +9,10 @@ import time
 from meteor_reasoner.materialization.utils import no_new_facts, pre_calculate_threshold, entail_same_nonrecursive_predicates
 from meteor_reasoner.utils.operate_dataset import save_dataset_to_file
 from meteor_reasoner.utils.entail_check import entail
+from copy import deepcopy
+import logging
+
+materialization_logger = logging.getLogger(__name__)
 
 def calculate_redundancy(delta, old):
     cnt = 0
@@ -94,7 +100,7 @@ def naive_combine(D, delta_new, D_index=None, graph=None):
     return fixpoint
 
 
-def materialize(D, rules, mode="seminaive", K=100, logger=None, must_literals=None, metrics=None, graph=None, fact=None):
+def materialize(D, rules, delta_old, mode="seminaive", K=100, logger=None, must_literals=None, metrics=None, graph=None, fact=None):
     """
     The function implements the materialization operation.
     Args:
@@ -105,7 +111,13 @@ def materialize(D, rules, mode="seminaive", K=100, logger=None, must_literals=No
         The
     """
     D_index = build_index(D)
-    delta_old = D
+    if not delta_old:
+        delta_old = D
+    results = {'D': [], 'delta_old': [],
+               'delta_new': []}  # NOTE: (19.5) new dictionary of results returned for debugging purposes
+    results['D'].append(deepcopy(D))
+    results['delta_old'].append(deepcopy(delta_old))
+    results['delta_new'].append({})
     if mode == "opt":
         return opt_materialize(D, rules, delta_old=delta_old, D_index=D_index, K=K)
     elif mode == "seminaive":
@@ -160,8 +172,13 @@ def materialize(D, rules, mode="seminaive", K=100, logger=None, must_literals=No
                     entail(fact, delta_new, graph=graph)
                 fixpoint = naive_combine(D, delta_new, D_index, graph=graph)
 
+        results['D'].append(deepcopy(D))
+        results['delta_old'].append(deepcopy(delta_old))
+        results['delta_new'].append(deepcopy(delta_new))
         if fixpoint:
-            return True
+            # NOTE: (19.5) modifying returns!
+            return results
+            # return True
 
     return False
 
